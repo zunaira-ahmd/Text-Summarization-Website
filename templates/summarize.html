@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Article Summarizer</h1>
+        <form method="post" enctype="multipart/form-data">
+            <div class="input-block">
+                <label for="article">Enter Article:</label>
+                <textarea id="article" name="article" rows="10">{{ original_article }}</textarea>
+            </div>
+            <div class="input-block">
+                <label for="file">Or Upload Article File:</label>
+                <input type="file" id="file" name="file">
+            </div>
+            <div class="input-block">
+                <label for="length_option">Summary Length:</label>
+                <select id="length_option" name="length_option">
+                    <option value="brief" {% if length_option == 'brief' %}selected{% endif %}>Brief</option>
+                    <option value="detailed" {% if length_option == 'detailed' %}selected{% endif %}>Detailed</option>
+                </select>
+            </div>
+            <button type="submit">Summarize</button>
+        </form>
+
+        <!-- Button to view saved summaries -->
+        <a class="btn btn-primary mt-3" href="{{ url_for('my_summaries') }}">My Summaries</a>
+
+        {% if summarized_article %}
+            <div class="article-block">
+                <h2>Summarized Article</h2>
+                <p>{{ summarized_article }}</p>
+                <form method="post" action="{{ url_for('save_summary') }}">
+                    <input type="hidden" name="original_text" value="{{ original_article }}">
+                    <input type="hidden" name="summarized_text" value="{{ summarized_article }}">
+                    <button type="submit" class="btn btn-success">Save Summary</button>
+                    <button type="button" id="generate-image-button">Generate Image</button>
+                </form>
+                <h2>Generated Image</h2>
+                <img src="{{ generated_image_url }}" alt="Generated Image">
+            </div>
+            <h2>Summary Quality Metrics</h2>
+            <!-- Debugging output to verify received values -->
+            <p>Readability: {{ readability }}</p>
+            <p>Compression Ratio: {{ compression_ratio }}</p>
+            <p>Keyword Density: {{ keyword_density }}</p>
+            <canvas id="qualityChart" width="400" height="200"></canvas>
+            <script>
+                var ctx = document.getElementById('qualityChart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Readability', 'Compression Ratio', 'Keyword Density'],
+                        datasets: [{
+                            label: 'Quality Metrics',
+                            data: [{{ readability }}, {{ compression_ratio }}, {{ keyword_density }}],
+                            backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'],
+                            borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
+            <script>
+                document.getElementById('generate-image-button').addEventListener('click', function() {
+                    var summary = document.querySelector('textarea[name="article"]').value;
+                    fetch('/generate_image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            summary: summary
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        var img = document.createElement('img');
+                        img.src = data.image_url;
+                        document.body.appendChild(img);
+                    });
+                });
+            </script>
+        {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                {% for category, message in messages %}
+                    <li class="flash-{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!-- my_summaries.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Summaries</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>My Summaries</h1>
+        {% if summaries %}
+            <ul>
+            {% for summary in summaries %}
+                <li>
+                    <h3>Original Text</h3>
+                    <p>{{ summary.original_text }}</p>
+                    <h3>Summarized Text</h3>
+                    <p>{{ summary.summarized_text }}</p>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>You have no saved summaries.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
